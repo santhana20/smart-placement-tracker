@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Placement Tracker</title>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Segoe UI',sans-serif;
+}
+
+body{
+background:linear-gradient(135deg,#0f172a,#1e293b);
+color:white;
+min-height:100vh;
+padding:20px;
+}
+
+.container{
+max-width:1100px;
+margin:auto;
+}
+
+h1{
+text-align:center;
+margin-bottom:20px;
+font-size:2.5rem;
+}
+
+.form,.tools{
+display:flex;
+flex-wrap:wrap;
+gap:10px;
+margin-bottom:15px;
+}
+
+.form input,
+.form select,
+.tools input,
+.tools select{
+flex:1;
+padding:12px;
+border:none;
+border-radius:10px;
+outline:none;
+}
+
+button{
+padding:12px 18px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+background:#38bdf8;
+color:white;
+font-weight:bold;
+}
+
+.stats{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:15px;
+margin-bottom:20px;
+}
+
+.card{
+background:rgba(255,255,255,0.08);
+backdrop-filter:blur(10px);
+padding:20px;
+border-radius:15px;
+text-align:center;
+}
+
+.card h2{
+font-size:2rem;
+margin-bottom:5px;
+}
+
+.list{
+display:grid;
+gap:15px;
+}
+
+.company{
+background:rgba(255,255,255,0.08);
+backdrop-filter:blur(10px);
+padding:20px;
+border-radius:15px;
+}
+
+.company h3{
+margin-bottom:8px;
+}
+
+.actions{
+margin-top:10px;
+display:flex;
+gap:10px;
+}
+
+.edit{
+background:#22c55e;
+}
+
+.delete{
+background:#ef4444;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>🎯 Smart Placement Tracker</h1>
+
+<div class="form">
+<input type="text" id="company" placeholder="Company Name">
+
+<select id="status">
+<option>Applied</option>
+<option>Interview</option>
+<option>Selected</option>
+<option>Rejected</option>
+</select>
+
+<input type="date" id="date">
+
+<button onclick="addCompany()">Add Company</button>
+</div>
+
+<div class="tools">
+<input type="text" id="search"
+placeholder="Search Company..."
+onkeyup="displayCompanies()">
+
+<select id="filter"
+onchange="displayCompanies()">
+<option value="All">All Status</option>
+<option value="Applied">Applied</option>
+<option value="Interview">Interview</option>
+<option value="Selected">Selected</option>
+<option value="Rejected">Rejected</option>
+</select>
+</div>
+
+<div class="stats">
+
+<div class="card">
+<h2 id="total">0</h2>
+<p>Total</p>
+</div>
+
+<div class="card">
+<h2 id="selected">0</h2>
+<p>Selected</p>
+</div>
+
+<div class="card">
+<h2 id="interview">0</h2>
+<p>Interview</p>
+</div>
+
+<div class="card">
+<h2 id="rejected">0</h2>
+<p>Rejected</p>
+</div>
+
+</div>
+
+<div id="companyList" class="list"></div>
+<script>
+
+let companies =
+JSON.parse(localStorage.getItem("companies")) || [];
+
+function addCompany(){
+
+let company =
+document.getElementById("company").value;
+
+let status =
+document.getElementById("status").value;
+
+let date =
+document.getElementById("date").value;
+
+if(company.trim() === ""){
+alert("Enter Company Name");
+return;
+}
+
+companies.push({
+company,
+status,
+date
+});
+
+localStorage.setItem(
+"companies",
+JSON.stringify(companies)
+);
+
+document.getElementById("company").value="";
+document.getElementById("date").value="";
+
+displayCompanies();
+}
+
+function editCompany(index){
+
+let newName = prompt(
+"Edit Company Name",
+companies[index].company
+);
+
+if(newName){
+
+companies[index].company =
+newName;
+
+localStorage.setItem(
+"companies",
+JSON.stringify(companies)
+);
+
+displayCompanies();
+}
+}
+
+function deleteCompany(index){
+
+if(confirm("Delete this company?")){
+
+companies.splice(index,1);
+
+localStorage.setItem(
+"companies",
+JSON.stringify(companies)
+);
+
+displayCompanies();
+}
+}
+
+function displayCompanies(){
+
+let list =
+document.getElementById("companyList");
+
+let search =
+document.getElementById("search")
+.value.toLowerCase();
+
+let filter =
+document.getElementById("filter")
+.value;
+
+list.innerHTML = "";
+
+let selectedCount = 0;
+let interviewCount = 0;
+let rejectedCount = 0;
+
+companies.forEach((item,index)=>{
+
+if(item.status === "Selected")
+selectedCount++;
+
+if(item.status === "Interview")
+interviewCount++;
+
+if(item.status === "Rejected")
+rejectedCount++;
+
+if(
+!item.company.toLowerCase()
+.includes(search)
+){
+return;
+}
+
+if(
+filter !== "All" &&
+item.status !== filter
+){
+return;
+}
+
+list.innerHTML += `
+<div class="company">
+
+<h3>${item.company}</h3>
+
+<p><strong>Status:</strong>
+${item.status}</p>
+
+<p><strong>Date:</strong>
+${item.date || "Not Set"}</p>
+
+<div class="actions">
+
+<button class="edit"
+onclick="editCompany(${index})">
+Edit
+</button>
+
+<button class="delete"
+onclick="deleteCompany(${index})">
+Delete
+</button>
+
+</div>
+
+</div>
+`;
+});
+
+document.getElementById("total")
+.innerText = companies.length;
+
+document.getElementById("selected")
+.innerText = selectedCount;
+
+document.getElementById("interview")
+.innerText = interviewCount;
+
+document.getElementById("rejected")
+.innerText = rejectedCount;
+}
+
+displayCompanies();
+
+</script>
+
+</body>
+</html>
